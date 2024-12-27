@@ -1,0 +1,46 @@
+# Default values for memeenvy.
+
+namespace: memeenvy
+
+image:
+  repository: ghcr.io/deeplearningintelligence/prod-memeenvy-apiserver
+  pullPolicy: IfNotPresent
+  tag: "1735240444"
+
+imagePullSecrets:
+  - name: ghcr-login-secret
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+
+persistence:
+  data:
+    enabled: true
+    accessMode: ReadWriteMany
+    size: 5Gi
+    mountPath: /src/storage
+  logs:
+    enabled: true
+    accessMode: ReadWriteMany
+    size: 1Gi
+    mountPath: /src/server-logs
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

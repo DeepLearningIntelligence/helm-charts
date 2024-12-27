@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apiserver
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: apiserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apiserver
+  template:
+    metadata:
+      labels:
+        app: apiserver
+{{- if .Values.podAnnotations }}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8 }}
+{{- end }}
+    spec:
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+{{- if .Values.podSecurityContext }}
+      securityContext:
+{{ toYaml .Values.podSecurityContext | indent 8 }}
+{{- end }}
+      containers:
+        - name: apiserver
+{{- if .Values.securityContext }}
+          securityContext:
+{{ toYaml .Values.securityContext | indent 12 }}
+{{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 3000
+              name: http
+            - containerPort: 3001
+              name: websocket
+{{- if or .Values.persistence.data.enabled .Values.persistence.logs.enabled }}
+          volumeMounts:
+{{- if .Values.persistence.data.enabled }}
+            - name: apiserver-data-storage
+              mountPath: {{ .Values.persistence.data.mountPath }}
+{{- end }}
+{{- if .Values.persistence.logs.enabled }}
+            - name: apiserver-logs-storage
+              mountPath: {{ .Values.persistence.logs.mountPath }}
+{{- end }}
+{{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+{{- if or .Values.persistence.data.enabled .Values.persistence.logs.enabled }}
+      volumes:
+{{- if .Values.persistence.data.enabled }}
+        - name: apiserver-data-storage
+          persistentVolumeClaim:
+            claimName: apiserver-local-pvc
+{{- end }}
+{{- if .Values.persistence.logs.enabled }}
+        - name: apiserver-logs-storage
+          persistentVolumeClaim:
+            claimName: apiserver-logs-pvc
+{{- end }}
+{{- end }}
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+{{- end }}
