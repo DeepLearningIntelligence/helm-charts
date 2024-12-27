@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adminserver
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: adminserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: adminserver
+  template:
+    metadata:
+      labels:
+        app: adminserver
+{{- if .Values.podAnnotations }}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8 }}
+{{- end }}
+    spec:
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+{{- if .Values.podSecurityContext }}
+      securityContext:
+{{ toYaml .Values.podSecurityContext | indent 8 }}
+{{- end }}
+      containers:
+        - name: adminserver
+{{- if .Values.securityContext }}
+          securityContext:
+{{ toYaml .Values.securityContext | indent 12 }}
+{{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 5513
+              name: http
+{{- if or .Values.persistence.data.enabled .Values.persistence.logs.enabled }}
+          volumeMounts:
+{{- if .Values.persistence.data.enabled }}
+            - name: adminserver-data-storage
+              mountPath: {{ .Values.persistence.data.mountPath }}
+{{- end }}
+{{- if .Values.persistence.logs.enabled }}
+            - name: adminserver-logs-storage
+              mountPath: {{ .Values.persistence.logs.mountPath }}
+{{- end }}
+{{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+{{- if or .Values.persistence.data.enabled .Values.persistence.logs.enabled }}
+      volumes:
+{{- if .Values.persistence.data.enabled }}
+        - name: adminserver-data-storage
+          persistentVolumeClaim:
+            claimName: adminserver-local-pvc
+{{- end }}
+{{- if .Values.persistence.logs.enabled }}
+        - name: adminserver-logs-storage
+          persistentVolumeClaim:
+            claimName: adminserver-logs-pvc
+{{- end }}
+{{- end }}
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+{{- end }}
