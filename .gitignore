@@ -1,0 +1,7 @@
+*.tar.zst
+*.tar.zst.part*
+*.tgz
+*.txt
+bin/
+images.txt
+run.sh
